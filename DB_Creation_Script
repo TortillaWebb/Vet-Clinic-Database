@@ -1,0 +1,610 @@
+DROP TABLE prescription; 
+DROP TABLE diagnosis;
+DROP TABLE appointment_assignment;
+DROP TABLE appointment;
+DROP TABLE medication;
+DROP TABLE vet_nurse;
+DROP TABLE vet_doc;
+DROP TABLE payment;
+DROP TABLE pet;
+DROP TABLE pet_owner;
+
+CREATE TABLE pet_owner (
+owner_id	NUMBER(10),
+pet_owner_name	VARCHAR2(50),
+pet_owner_address	VARCHAR2(2000),
+pet_owner_phone_number	VARCHAR2(11),
+pet_owner_email_address	VARCHAR2(100),
+pet_insurance_information	VARCHAR2(2000),
+pet_owner_age	NUMBER(3),
+CONSTRAINT owner_pk PRIMARY KEY (owner_id)
+);
+
+CREATE TABLE pet (
+pet_id	NUMBER (4) CONSTRAINT pet_id_range CHECK (pet_id BETWEEN 1000 AND 3000),
+owner_id	NUMBER(4),
+pet_name	VARCHAR2 (200),
+species	VARCHAR2(20),
+pet_age	NUMBER(2) CONSTRAINT pets_age CHECK (pet_age IN ('0','1','2','3','4','5','6','7','8','9','10','11','12')),
+breed_type	VARCHAR2(200),
+weight	VARCHAR2(5),
+colour	VARCHAR2(100),
+sex	VARCHAR2(1) CONSTRAINT pet_gender CHECK (sex IN ('M','F')),
+date_of_birth	DATE,
+microchip_id	NUMBER(6),
+emergency_contact	VARCHAR2(2000),
+CONSTRAINT pet_pk PRIMARY KEY (pet_id),
+CONSTRAINT owner_pet_fk FOREIGN KEY (owner_id)
+REFERENCES pet_owner (owner_id)	
+);
+
+CREATE TABLE payment (
+payment_id	NUMBER(10),
+owner_id	NUMBER(4),
+payment_datetime TIMESTAMP,
+payment_amount	VARCHAR2(5),
+payment_status	VARCHAR2(6)	CHECK (payment_status IN ('Unpaid','Paid')),
+CONSTRAINT payment_pk PRIMARY KEY (payment_id),
+CONSTRAINT owner_payment_fk FOREIGN KEY (owner_id)
+REFERENCES pet_owner (owner_id)
+);
+
+
+CREATE TABLE vet_doc (
+doc_id	NUMBER(38),
+doc_name	VARCHAR2(1000),
+ft_pt	VARCHAR2(10)	CHECK (ft_pt IN ('Full-time','Part-time')),
+office_number	NUMBER(2),
+telephone_number	VARCHAR2(11),
+email_address	VARCHAR2(100),
+license_number	NUMBER(8),
+CONSTRAINT doc_pk PRIMARY KEY (doc_id),
+CONSTRAINT unique_email UNIQUE (email_address)
+);
+
+
+CREATE TABLE vet_nurse (
+nurse_id	NUMBER(38),
+nurse_name	VARCHAR2(1000),
+ft_pt	VARCHAR2(10)	CHECK (ft_pt IN ('Full-time','Part-time')),
+nurse_office_number	VARCHAR2(2) DEFAULT '00',
+nurse_telephone_number	VARCHAR2(11),
+nurse_email_address	VARCHAR2(100),
+nurse_license_number	NUMBER(8),
+CONSTRAINT nurse_pk PRIMARY KEY (nurse_id)
+);
+
+CREATE TABLE medication (
+medication_id	NUMBER(38),
+medication_required	VARCHAR2(300),
+medication_cost	VARCHAR2(4),
+pharmacy_recommendation	VARCHAR2(500),
+CONSTRAINT medication_pk PRIMARY KEY (medication_id)
+);
+
+CREATE TABLE appointment (
+consult_id	NUMBER(38),
+pet_id	NUMBER(4),
+doc_id	NUMBER(4),
+appointment_date_time	DATE,
+appointment_attend_status	VARCHAR2(12)	CHECK (appointment_attend_status IN ('Attended','Not Attended')),
+fees_due_status	NUMBER(10),
+appointment_room_number	NUMBER(2),
+expected_appointment_duration VARCHAR(100),
+deferral_status	VARCHAR2(100),
+cancellation_fee_due_status	VARCHAR2(6),
+CONSTRAINT consult_pk PRIMARY KEY (consult_id),
+CONSTRAINT pet_appoint_fk FOREIGN KEY (pet_id)
+REFERENCES pet (pet_id),
+CONSTRAINT doc_appoint_fk FOREIGN KEY (doc_id)
+REFERENCES vet_doc (doc_id)
+);
+
+ALTER TABLE appointment
+ADD CONSTRAINT appointment_day_check
+CHECK ((appointment_date_time >= TO_DATE('12-10-2023', 'DD-MM-YYYY')
+        AND TO_CHAR(appointment_date_time, 'DY') IN ('MON', 'FRI')) 
+        OR appointment_date_time < TO_DATE('12-10-2023', 'DD-MM-YYYY'));
+
+CREATE TABLE appointment_assignment (
+nurse_id	NUMBER(6),
+consult_id	NUMBER(6),
+CONSTRAINT assignment_pk PRIMARY KEY (nurse_id, consult_id),
+CONSTRAINT nurse_appass_fk FOREIGN KEY (nurse_id)
+REFERENCES vet_nurse (nurse_id),
+CONSTRAINT consult_appass_fk FOREIGN KEY (consult_id)
+REFERENCES appointment (consult_id)
+);
+
+
+CREATE TABLE diagnosis (
+diagnosis_id NUMBER (38),
+consult_id	NUMBER(6),
+diagnosis_date	DATE,
+diagnosis_description VARCHAR2(100),
+treatment_description	VARCHAR2(2000),
+referral_status	VARCHAR2(500),
+CONSTRAINT diagnosis_pk PRIMARY KEY (diagnosis_id),
+CONSTRAINT consult_diag_fk FOREIGN KEY (consult_id)
+REFERENCES appointment (consult_id)
+);
+
+
+CREATE TABLE prescription (
+prescription_id	NUMBER (38),
+medication_id	NUMBER(6),
+consult_id	NUMBER(6),
+diagnosis_id NUMBER(4),
+CONSTRAINT prescription_pk PRIMARY KEY (prescription_id),
+CONSTRAINT medication_pres_fk FOREIGN KEY (medication_id)
+REFERENCES medication (medication_id),
+CONSTRAINT diagnosis_pres_fk FOREIGN KEY (diagnosis_id)
+REFERENCES diagnosis (diagnosis_id)
+);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2000, 'David Jones', '23 Highfield Road, Bolton, M27 4FD', '01617612876', 'davidj1@outlook.co.uk', 'VetsForPets Basic Insurance', 54);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2001, 'Sam Lowe', '105 Smithtown Road, Manchester, M5 4FD', '01619817203', 'SamLowe@live.co.uk', 'Agria Insurance', 32);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2002, 'Craig Lloyd', '33 Ann Street, Salford, M2 5YZ', '01618712987', 'CraigL@outlook.com', 'VetsForPets Basic Insurance', 24);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2003, 'George Gil', '112 Fallow Street, Rushholme, M14 7QZ', '01611872654', 'GeorigeMUC2007@outlook.com', 'Purely Pets', 29);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2004, 'Kylie Wilson', '11 Hulme Street, M5 2ZD', '01618712987', 'kylie98@outlook.com', 'VetsForPets Basic Insurance', 26);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2005, 'Chabbu Carrasco', '101 Blackfriars Road, Salford, M3 7QD', '01611827654', 'chabbuxo@gmail.com', 'Admiral', 39);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2006, 'Sarah Rowland', '25 York Avenue, Manchester, M27 7BY', '01618719286', 'sarahr@outlook.com', 'More Than', 31);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2007, 'Kylie Wu', '23 Park Drive, Manchester, M44 6DB', '01618710285', 'kyliewu01@live.com', 'PDSA Pet Insurance', 54);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2008, 'Kylie Reed', '11 Stanley Mount, Sale, M51 8GB', '01618129631', 'reedkylie@outlook.com', 'Agria Insurance', 44);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2009, 'Gabby Sharp', '29 Caroline Street, Wigan, WN3 4FN', '01618127459', 'sharpieg@gmail.com', 'Purely Pets', 41);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(2010, 'Russell Stephens', '2 Haveley Road, Manchester, M22 4UY', '01618712595', 'russellstephens@outlook.com', 'VetsForPets Basic Insurance', 61);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(0000, null, null, null, null, null, null);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(0001, null, null, null, null, null, null);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(0002, null, null, null, null, null, null);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(0003, null, null, null, null, null, null);
+
+INSERT INTO pet_owner	(owner_id, pet_owner_name, pet_owner_address, pet_owner_phone_number, pet_owner_email_address, pet_insurance_information, pet_owner_age)
+VALUES	(0004, null, null, null, null, null, null);
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1000, 2000, 'ChappyDog', 'Dog', 2, 'Alsation', '3kg', 'Beige', 'M', TO_DATE('12-Nov-2021', 'DD-Mon-YYYY'), 591327, 'David Jones: 01617612876');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1001, 2001, 'Chiwado', 'Dog', 10, 'Chihuahua', '1kg', 'Black', 'F', TO_DATE('05-Aug-2013', 'DD-Mon-YYYY'), 591327, 'Sam Lowe: 01619817203');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1002, 2002, 'BullyTom', 'Dog', 6, 'Bull dog', '4.5kg', 'Grey', 'F', TO_DATE('07-Mar-2017', 'DD-Mon-YYYY'), 591327, 'Craig Lloyd: 01618712987');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1003, 2003, 'TerryToe', 'Dog', 4, 'Terrier', '1.2kg', 'White', 'F', TO_DATE('22-Sep-2019', 'DD-Mon-YYYY'), 591327, 'George Gil: 01611872654');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1004, 2004, 'Poody', 'Dog', 8, 'Boxer', '1kg', 'Black', 'M', TO_DATE('05-Apr-2015', 'DD-Mon-YYYY'), 591327, 'Kylie Wilson: 01618712987');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1005, 2005, 'Dood', 'Dog', 3, 'Dalmation', '7kg', 'Spotted', 'F', TO_DATE('06-Jun-2020', 'DD-Mon-YYYY'), 591327, 'Chabbu Carrasco: 01611827654');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1006, 2006, 'Dood', 'Dog', 11, 'SheepWolf', '10kg', 'Brown', 'M', TO_DATE('17-May-2012', 'DD-Mon-YYYY'), 591327, 'Sarah Rowland: 01618719286');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1007, 2007, 'LabbyDee', 'Dog', 12, 'Labrador', '11kg', 'White', 'M', TO_DATE('14-Jun-2011', 'DD-Mon-YYYY'), 591327, 'Kylie Wu: 01618710285');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1008, 2008, 'ShiTzo', 'Dog', 7, 'Shih Tzu', '1kg', 'Mixed brown', 'F', TO_DATE('12-Oct-2016', 'DD-Mon-YYYY'), 591327, 'Kylie Reed: 01618129631');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1009, 2009, 'Jake', 'Dog', 3, 'Shih Tzu', '4kg', 'Greyish white', 'M', TO_DATE('01-Dec-2020', 'DD-Mon-YYYY'), 591327, 'Gabby Sharp: 01618127459');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(1010, 2010, 'Gotty', 'Dog', 4, 'Shih Tzu', '1kg', 'Mixed brown', 'M', TO_DATE('03-Sep-2019', 'DD-Mon-YYYY'), 591327, 'Russell Stephens: 01618712595');
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(2000, null, null, null, null, null, null, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null);
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(2001, null, null, null, null, null, null, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null);
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(2002, null, null, null, null, null, null, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null);
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(2003, null, null, null, null, null, null, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null);
+
+INSERT INTO pet	(pet_id, owner_id, pet_name, species, pet_age, breed_type, weight, colour, sex, date_of_birth, microchip_id, emergency_contact)
+VALUES	(2004, null, null, null, null, null, null, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null);
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (3000, 2000, SYSTIMESTAMP, '£10', 'Unpaid');
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (3001, 2009, SYSTIMESTAMP, '£10', 'Paid');
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (0000, null, null, null, null);
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (0001, null, null, null, null);
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (0002, null, null, null, null);
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (0003, null, null, null, null);
+
+INSERT INTO payment (payment_id, owner_id, payment_datetime, payment_amount, payment_status)
+VALUES (0004, null, null, null, null);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2200, 'Cleverly Clear', 'Part-time', 12, '01617654321', 'cleverly_cl@noahs.com', 10753927);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2201, 'Mike Fazowsaki', 'Full-time', 34, '01616225437', 'mikeK@noahs.com', 10453628);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2202, 'Farraday Fellum', 'Full-time', 34, '01612936487', 'farradayF@noahs.com', 01732926);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2203, 'Fred Fox', 'Full-time',41, '01612345927', 'fredF@noahs.com', 01614286);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2204, 'Watson Smith', 'Full-time', 1, '01618162956', 'watsS@noahs.com', 10452398);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2205, 'Freeman Farrow', 'Full-time', 2, '01618236453', 'freemanF@noahs.com',10628727);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2206, 'Crowley Calder', 'Full-time', 10, '01618264981', 'crowleyC@noahs.com', 10328429);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (2207, 'Rahib Baker', 'Full-time', 16, '01619825367', 'rahibB@noahs.com', 10726433);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (0000, null, null, null, null, null, null);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (0001, null, null, null, null, null, null);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (0002, null, null, null, null, null, null);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (0003, null, null, null, null, null, null);
+
+INSERT INTO vet_doc (doc_id, doc_name, ft_pt, office_number, telephone_number, email_address, license_number)
+VALUES (0004, null, null, null, null, null, null);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1100, 'Sharon Watson', 'Full-time', DEFAULT, '01617254823', 'SharonW@noahs.com',10342568);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1101, 'Catrina Lowrell', 'Full-time', DEFAULT, '01612937561', 'CatrinaL@noahs.com', 10253746);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1102,'Lexie Russell', 'Part-time', DEFAULT, '01612938452', 'LexieR@naohs.com', 10263484);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1103,'Capri Matlida', 'Full-time', DEFAULT, '01613827652', 'CapriM@noahs.com', 10227653);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1104, 'Ibraham Hallie', 'Full-time', DEFAULT, '01618294538', 'IbrahamH@noahs.com', 10264829);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1105, 'Gwenda Harold','Full-time', DEFAULT, '01617283451', 'GwendaH@noahs.com', 10725369);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1106, 'Archer Alanis', 'Part-time', DEFAULT, '01612836481', 'ArcherA@noahs.com', 10264387);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1107, 'Jeanne Cade', 'Full-time', DEFAULT, '01612836528', 'JeanneC@naohs.com', 10263745);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1108, 'Jaylee Emberly', 'Part-time', DEFAULT, '01612836487', 'JayleeE@noahs.com', 10861248);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1109, 'Lavina Flossie', 'Full-time', DEFAULT, '01617293282', 'LavinaF@naohs.com', 10638271);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1110, 'Mike Leatrice', 'Full-time', DEFAULT, '01612863876', 'MikeL@noahs.com', 10752873);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1111, 'Laurna Zara', 'Full-time', DEFAULT, '01612876123', 'LaurnaZ@naohs.com', 10628372);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1112, 'Chantelle Collin', 'Part-time', DEFAULT, '01612872634', 'ChantelleC@noahs.com', 10629812);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1113, 'Carey Troy', 'Full-time', DEFAULT, '01612871529', 'CareyT@noahs.com', 10628376);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1114, 'Aria Astoria', 'Full-time', DEFAULT, '01618267309', 'AriaA@noahs.com', 10263786);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (1115, 'Dixon Quintin', 'Full-time', DEFAULT, '01612987687', 'DixonQ@noahs.com', 10826487);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (0000, null, null, null, null, null, null);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (0001, null, null, null, null, null, null);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (0002, null, null, null, null, null, null);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (0003, null, null, null, null, null, null);
+
+INSERT INTO vet_nurse (nurse_id, nurse_name, ft_pt, nurse_office_number, nurse_telephone_number, nurse_email_address, nurse_license_number)
+VALUES (0004, null, null, null, null, null, null);
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (4000, 'AA', '£3', 'Smiths Pharmacy');
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (4001, 'Worming treatment', '£5', 'Manor Pharmacy');
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (0000, null, null, null);
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (0001, null, null, null);
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (0002, null, null, null);
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (0003, null, null, null);
+
+INSERT INTO medication (medication_id, medication_required, medication_cost, pharmacy_recommendation)
+VALUES (0004, null, null, null);
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105072, 1000, 2201, TO_DATE('05-AUG-2023', 'DD-Mon-YYYY'), 'Attended', 10, 01, '60 min', 'Deffered: Appointment every Tuesday 10-12pm.', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105073, 1003, 2200, TO_DATE('05-AUG-2023', 'DD-Mon-YYYY'), 'Attended', 10, 02, '30 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105074, 1004, 2201, TO_DATE('09-AUG-2023', 'DD-Mon-YYYY'), 'Attended', 15, 01, '30 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105076, 1001, 2202, TO_DATE('16-AUG-2023', 'DD-Mon-YYYY'), 'Attended', 20, 01, '30 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105077, 1005, 2206, TO_DATE('02-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 10, 01, '60 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105078, 1000, 2201, TO_DATE('06-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 10, 01, '60 min', 'No defferal', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105079, 1008, 2202, TO_DATE('06-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 15, 02, '60 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105091, 1003, 2202, TO_DATE('09-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 10, 02, '30 min', 'Deffered: Ultrasonic dental scaling in two weeks', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105092, 1006, 2204, TO_DATE('27-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 20, 01, '60 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105187, 1002, 2203, TO_DATE('29-SEP-2023', 'DD-Mon-YYYY'), 'Attended', 15, 01, '30 min', 'No defferal', 'No'); 
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105188, 1007, 2203, TO_DATE('04-OCT-2023', 'DD-Mon-YYYY'), 'Attended', 20, 01, '60 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105189, 1006, 2204, TO_DATE('07-OCT-2023', 'DD-Mon-YYYY'), 'Attended', 20, 01, '30 min', 'No deferral', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105235, 1006, 2204, TO_DATE('07-OCT-2023', 'DD-Mon-YYYY'), 'Attended', 20, 02, '60 min', 'No defferal', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (105236, 1002, 2203, TO_DATE('11-OCT-2023', 'DD-Mon-YYYY'), 'Attended', 15, 01, '30 min', 'No defferal', 'No');
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (0000, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null, null, null, null);
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (0001, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null, null, null, null);
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (0002, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null, null, null, null);
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (0003, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null, null, null, null);
+
+INSERT INTO appointment (consult_id, pet_id, doc_id, appointment_date_time, appointment_attend_status, fees_due_status, appointment_room_number, expected_appointment_duration,deferral_status, cancellation_fee_due_status)
+VALUES (0004, null, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null, null, null, null);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1100, 105072);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1101, 105072);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1102, 105073);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1103, 105073);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1104, 105074);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1105, 105074);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1106, 105076);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1107, 105076);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1108, 105077);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1109, 105077);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1110, 105078);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1111, 105078);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1112, 105079);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1113, 105079);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1114, 105091);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1115, 105091);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1100, 105092);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1101, 105092);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1102, 105187);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1103, 105187);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1104, 105188);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1105, 105188);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1106, 105189);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1107, 105189);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1108, 105235);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1109, 105235);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1110, 105236);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (1111, 105236);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (0000, 0000);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (0001, 0001);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (0002, 0002);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (0003, 0003);
+
+INSERT INTO appointment_assignment (nurse_id, consult_id)
+VALUES (0004, 0004);
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3000, 105072, TO_DATE('05-AUG-2023', 'DD-Mon-YYYY'), 'Socialisation problems', 'Bring him Tuesdays 10 to 12.00pm', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3001, 105073, TO_DATE('05-AUG-2023', 'DD-Mon-YYYY'), 'leg pain', 'Get drug AA from Smiths Pharmacy', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3002, 105189, TO_DATE('07-OCT-2023', 'DD-Mon-YYYY'),'hyperactivity','Take park walks every evening', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3003, 105236, TO_DATE('11-OCT-2023', 'DD-Mon-YYYY'),  'Kidney stones', 'Surgery on 21-Nov-21', 'Referred for surgery');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3004, 105235, TO_DATE('07-OCT-2023', 'DD-Mon-YYYY'), 'Overgrown skin', 'Moisturise skin folds', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3005, 105187, TO_DATE('29-SEP-2023', 'DD-Mon-YYYY'), 'Socilisation problems & worms', 'Needs socialsation treats & worming treatment', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3006, 105091, TO_DATE('09-SEP-2023', 'DD-Mon-YYYY'), 'Dental plaque build up', 'Ultrasonic dental scaling in two weeks', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (3007, 105078, TO_DATE('06-SEP-2023', 'DD-Mon-YYYY'), 'Socialisation problems', 'Needs socialisation treats', 'No referral');
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (0000, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null);
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (0001, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null);
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (0002, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null);
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (0003, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null);
+
+INSERT INTO diagnosis (diagnosis_id, consult_id, diagnosis_date, diagnosis_description, treatment_description, referral_status)
+VALUES (0004, null, TO_DATE('01-JAN-2000', 'DD-Mon-YYYY'), null, null, null);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (5000, 4000, 105073, 3001);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (5001, 4001, 105187, 3005);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (0000, null, null, null);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (0001, null, null, null);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (0002, null, null, null);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (0003, null, null, null);
+
+INSERT INTO prescription (prescription_id, medication_id, consult_id, diagnosis_id)
+VALUES (0004, null, null, null);
+
+SELECT * FROM prescription;
+SELECT * FROM diagnosis; 
+SELECT * FROM appointment_assignment;
+SELECT * FROM appointment;
+SELECT * FROM medication; 
+SELECT * FROM vet_nurse;
+SELECT * FROM vet_doc;
+SELECT * FROM payment;
+SELECT * FROM pet;
+SELECT * FROM pet_owner;
