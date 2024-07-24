@@ -1,0 +1,80 @@
+# Write an SQL statement that lists the pet id, pet name, pet age showing the columns as “ID”, “Name” and “Age”. Their names should be those starting with letters A to M. Sort the results by the pet id in descending order.
+
+SELECT PET_ID AS "ID", 
+PET_NAME AS "Name", 
+PET_AGE AS "Age" 
+FROM PET 
+WHERE UPPER(SUBSTR(PET_NAME, 1)) BETWEEN 'A' AND 'M' 
+ORDER BY PET_ID DESC; 
+
+
+# Write an SQL statement that shows the most overworked part-time vet doctor, i.e., any vet with 3 or more appointments for pet clinics, listing details such as id, name and office number. 
+
+SELECT v.DOC_ID AS "ID", 
+v.DOC_NAME AS "Name",  
+v.OFFICE_NUMBER AS "Office Number" 
+FROM VET_DOC v 
+INNER JOIN APPOINTMENT b 
+ON v.DOC_ID = b.DOC_ID 
+GROUP BY v.DOC_ID,v.DOC_NAME, v.OFFICE_NUMBER 
+HAVING COUNT (b.CONSULT_ID) >= 3 
+ORDER BY COUNT (b.CONSULT_ID) DESC; 
+
+# Write an SQL query that lists pet details with 2 or more appointments between 2nd Jan 2023 and 26th Sep 2023. The columns should include pet id, name and a count of the number of appointments. 
+
+SELECT p.PET_ID AS "ID", 
+p.PET_NAME AS "Name", 
+COUNT(a.CONSULT_ID) AS "Appointments" 
+FROM PET p  
+INNER JOIN APPOINTMENT a 
+ON p.PET_ID = a.PET_ID 
+WHERE a.APPOINTMENT_DATE_TIME BETWEEN TO_DATE('02-01-2023', 'DD-MM-YYYY') AND TO_DATE ('26-09-2023', 'DD-MM-YYYY') 
+GROUP BY p.PET_ID, p.PET_NAME 
+HAVING COUNT(a.CONSULT_ID) >= 2 
+ORDER BY p.PET_ID; 
+
+# Write an SQL query that finds pet id, name and cost of appointments, such that the cost of the appointment is less than the average appointment cost of all pet appointments. 
+
+SELECT p.PET_ID AS "Pet ID", 
+p.PET_NAME AS "Name", 
+a.FEES_DUE_STATUS AS "Cost of Appointment" 
+FROM PET p 
+INNER JOIN APPOINTMENT a 
+ON p.PET_ID = a.PET_ID 
+WHERE a.FEES_DUE_STATUS < (SELECT AVG(FEES_DUE_STATUS) FROM APPOINTMENT); 
+
+# Write an SQL statement that lists a doctor id, status, the total number of appointments he/she has handled, the pet involved (id, name) and the dates these took place. The query should only show cases whose diagnoses involved “socialisation” or “dental” work and where the appointment date was at least 4 weeks ago. 
+
+SELECT v.DOC_ID AS "Vet Doctor ID", 
+v.FT_PT AS "Work Status", 
+(SELECT COUNT(*) FROM APPOINTMENT b WHERE b.DOC_ID = v.DOC_ID) AS "Appointments handled by Vet Doctor", 
+p.PET_ID || ', ' || p.PET_NAME AS "Pet ID and Name", 
+a.APPOINTMENT_DATE_TIME AS "Date of Appointment" 
+FROM APPOINTMENT a 
+INNER JOIN VET_DOC v 
+ON a.DOC_ID = v.DOC_ID 
+INNER JOIN PET p 
+ON a.PET_ID = p.PET_ID AND a.DOC_ID = v.DOC_ID 
+INNER JOIN DIAGNOSIS d 
+ON a.CONSULT_ID = d.CONSULT_ID AND a.PET_ID = p.PET_ID AND a.DOC_ID = v.DOC_ID 
+WHERE UPPER(d.DIAGNOSIS_DESCRIPTION) LIKE UPPER('%socialisation%') 
+OR UPPER(d.DIAGNOSIS_DESCRIPTION) LIKE UPPER('%dental%') 
+AND a.APPOINTMENT_DATE_TIME <= SYSDATE - INTERVAL '28' DAY; 
+
+# Write an SQL query that finds pet ids with no appointments or diagnoses so far. 
+
+SELECT p.PET_ID 
+FROM PET p  
+INNER JOIN APPOINTMENT a 
+ON p.PET_ID = a.PET_ID 
+LEFT OUTER JOIN DIAGNOSIS d 
+ON a.CONSULT_ID = d.CONSULT_ID AND p.PET_ID = a.PET_ID 
+WHERE d.DIAGNOSIS_ID IS NULL 
+
+ UNION  
+
+SELECT p2.PET_ID 
+FROM PET p2 
+LEFT JOIN APPOINTMENT a2 
+ON p2.PET_ID = a2.PET_ID 
+WHERE a2.CONSULT_ID IS NULL; 
